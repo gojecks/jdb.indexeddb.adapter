@@ -1,0 +1,29 @@
+{
+    "name": "jdb.indexeddb.adapter",
+    "version": "1.0.0-beta",
+    "description": "adapters for jdb",
+    "main": "dist/index.js",
+    "files": [
+        "index.js"
+    ],
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/gojecks/jdb.indexeddb.adapter.git"
+    },
+    "keywords": [
+        "jdb",
+        "indexeddb.adapter",
+        "indexeddb",
+        "plugin",
+        "databaase"
+    ],
+    "author": "Gojecks Joseph",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/gojecks/jdb.indexeddb.adapter/issues"
+    },
+    "homepage": "https://github.com/gojecks/jdb.indexeddb.adapter#readme"
+}
