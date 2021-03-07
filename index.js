@@ -15,9 +15,10 @@
     /**
      * 
      * @param {*} config 
+     * @param {*} dbToStorageInstance 
      * @param {*} CB 
      */
-    function indexedDBStorage(config, CB) {
+    function indexedDBStorage(config, dbToStorageInstance, CB) {
         var publicApis = {},
             dbName = "_jEliDB_",
             _storeName = '_jEli_DB_Store_',
@@ -136,25 +137,25 @@
         /**
          * subscribe to storage event
          */
-        indexedDBStorage.privateApi.storageEventHandler
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(config.name, 'insert'), function(tableName, data, insertData) {
+        dbToStorageInstance.storageEventHandler
+            .subscribe(dbToStorageInstance.eventNamingIndex(config.name, 'insert'), function(tableName, data, insertData) {
                 _privateStore[tableName].lastInsertId += data.length;
                 if (insertData) {
                     _privateStore[tableName + ":data"].push.apply(_privateStore[tableName + ":data"], data);
                 }
                 saveData(tableName);
             })
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(config.name, 'update'), saveData)
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(config.name, 'delete'), function(tableName) {
+            .subscribe(dbToStorageInstance.eventNamingIndex(config.name, 'update'), saveData)
+            .subscribe(dbToStorageInstance.eventNamingIndex(config.name, 'delete'), function(tableName) {
                 saveData(tableName);
             })
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(config.name, 'onCreateTable'), createTable)
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(dbName, 'onAlterTable'), saveData)
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(config.name, 'onDropTable'), function(tbl) {
+            .subscribe(dbToStorageInstance.eventNamingIndex(config.name, 'onCreateTable'), createTable)
+            .subscribe(dbToStorageInstance.eventNamingIndex(dbName, 'onAlterTable'), saveData)
+            .subscribe(dbToStorageInstance.eventNamingIndex(config.name, 'onDropTable'), function(tbl) {
                 publicApis.removeItem(tbl);
                 publicApis.removeItem(tbl + ":data");
             })
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(config.name, 'onUpdateTable'), function(tbl, updates) {
+            .subscribe(dbToStorageInstance.eventNamingIndex(config.name, 'onUpdateTable'), function(tbl, updates) {
                 Object.keys(updates)
                     .forEach(function(key) {
                         _privateStore[tbl][key] = updates[key];
@@ -162,14 +163,14 @@
                 // set the property to db
                 publicApis.setItem(tbl, _privateStore[tbl]);
             })
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(config.name, 'onTruncateTable'), saveData)
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(config.name, 'onResolveSchema'), function(version, tables) {
+            .subscribe(dbToStorageInstance.eventNamingIndex(config.name, 'onTruncateTable'), saveData)
+            .subscribe(dbToStorageInstance.eventNamingIndex(config.name, 'onResolveSchema'), function(version, tables) {
                 publicApis.setItem('version', version);
                 Object.keys(tables).forEach(function(key) {
                     createTable(key, tables[key]);
                 });
             })
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(config.name, 'onRenameTable'), function(oldTable, newTable, cb) {
+            .subscribe(dbToStorageInstance.eventNamingIndex(config.name, 'onRenameTable'), function(oldTable, newTable, cb) {
                 _privateStore[oldTable].TBL_NAME = newTable;
                 publicApi.setItem(newTable, _privateStore[oldTable]);
                 publicApi.setItem(newTable + ":data", _privateStore[oldTable + ":data"]);
@@ -177,15 +178,15 @@
                 publicApi.removeItem(oldTable + ":data");
                 (cb || noop)();
             })
-            .subscribe(indexedDBStorage.privateApi.eventNamingIndex(config.name, 'onRenameDataBase'), function(oldName, newName, cb) {
+            .subscribe(dbToStorageInstance.eventNamingIndex(config.name, 'onRenameDataBase'), function(oldName, newName, cb) {
                 var oldData = this.getItem(oldName);
                 Object.keys(oldData.tables).forEach(function(tbl) {
                     oldData.tables[tbl].DB_NAME = newName;
                     oldData.tables[tbl].lastModified = +new Date
                 });
                 this.setItem(newName, oldData);
-                this.setItem(indexedDBStorage.privateApi.storeMapping.resourceName, this.getItem(indexedDBStorage.privateApi.storeMapping.resourceName));
-                indexedDBStorage.privateApi.$getActiveDB(oldName).$get('recordResolvers').rename(newName);
+                this.setItem(dbToStorageInstance.storeMapping.resourceName, this.getItem(dbToStorageInstance.storeMapping.resourceName));
+                dbToStorageInstance.getInstance(oldName).$get('recordResolvers').rename(newName);
                 this.removeItem(oldName);
                 (cb || noop)();
             });
@@ -225,7 +226,7 @@
          */
         publicApis.getItem = function(name) {
             if (!name) {
-                return indexedDBStorage.privateApi.generateStruct(_privateStore);
+                return dbToStorageInstance.generateStruct(_privateStore);
             }
             return _privateStore[name];
         };
